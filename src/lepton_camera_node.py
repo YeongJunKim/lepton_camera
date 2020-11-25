@@ -3,9 +3,12 @@
 import cv2
 import numpy as np
 import rospy
+import sys
 import std_msgs
-import sensor_msgs
+from sensor_msgs.msg import Image
+from cv_bridge import CvBridge, CvBridgeError
 import geometry_msgs
+from cv_bridge.boost.cv_bridge_boost import getCvType
 
 
 
@@ -53,28 +56,93 @@ import geometry_msgs
 #     OpenCvCapture().show_video()
 
 
+class LeptonCamera:
+    def __init__(self):
+        self.rgb_topic = "/usb_cam/image_raw"
+        self.ir_topic = "/ir/usb_cam/image_raw"
+        self.depth_topic = "/camera/depth/image_rect_raw"
+        self.bridge = CvBridge
+        self.sub_rgb = rospy.Subscriber(self.rgb_topic, Image, self.rgb_callbcak, queue_size=1)
+        self.sub_ir = rospy.Subscriber(self.ir_topic, Image, self.ir_callback, queue_size=1)
+        self.sub_depth = rospy.Subscriber(self.depth_topic, Image, self.depth_callback, queue_size=1)
+        
+        
+        self.count = 0
+        
+        self.output_pub_ir = rospy.Publisher("/lepton/out", Image, queue_size=1)
+        
+        self.output_pub_depth = rospy.Publisher("/depth/out", Image, queue_size=1)
+        
+        self.nowTick = rospy.get_time()
+        self.pastTick = self.nowTick
+        
+        
+    def ir_callback(self, msg):
+        # print("Received an image!")
+        bridge = CvBridge()
+        self.image_ir = bridge.imgmsg_to_cv2(msg, "mono8")
+        self.main(1)
+    def rgb_callbcak(self, msg):
+        # print("Received an rgb image!")
+        bridge = CvBridge()
+        self.image_rgb = bridge.imgmsg_to_cv2(msg, "bgr8")
+        self.main(2)
+    
+    def depth_callback(self, msg):
+        # print("Received an depth image!")
+        bridge = CvBridge()
+        self.image_depth = bridge.imgmsg_to_cv2(msg)
+        self.main(3)
+    
+        
+    def main(self, type):
+        self.nowTick = rospy.get_time()
+        # if self.nowTick - self.pastTick > 0.05:
+        print("run")
+        if type == 1:
+            msg = CvBridge().cv2_to_imgmsg(self.image_ir)
+            self.output_pub_ir.publish(msg)
+        
+        if type == 3:
+            msg = CvBridge().cv2_to_imgmsg(self.image_depth)
+            self.output_pub_depth.publish(msg)    
+            
+        self.nowTick = rospy.get_time()            
+        self.pastTick = self.nowTick
 
+def main(args):
+    rospy.init_node('lepton')
+    node = LeptonCamera()
+    try:
+        rospy.spin()
+        # node.main()
+    except KeyoardInterrupt:
+        # except:
+        print("Shutting down")
+            
+if __name__ == '__main__':
+    main(sys.argv)
+        
+    
 
-
-
-cv2.namedWindow("preview")
-cameraID = 0
-vc = cv2.VideoCapture(cameraID)
-if vc.isOpened(): # try to get the first frame
-    rval, frame = vc.read()
-    print(rval)
-    print(frame)
-else:
-    print('no rval')
-    rval = False
-while rval:
-    cv2.imshow("preview", frame)
-    rval, frame = vc.read()
-    frame = cv2.cvtColor(frame, cv2.COLOR_HSV2BGR)
-    print('hello')
-    key = cv2.waitKey(20)
-    if key == 27: # exit on ESC
-        break
+# cv2.namedWindow("preview")
+# cameraID = 0
+# vc = cv2.VideoCapture(cameraID)
+# if vc.isOpened(): # try to get the first frame
+#     rval, frame = vc.read()
+#     print(rval)
+#     print(frame)
+# else:
+#     print('no rval')
+#     rval = False
+# while rval:
+#     cv2.imshow("preview", frame)
+#     rval, frame = vc.read()
+#     frame = cv2.cvtColor(frame, cv2.COLOR_HSV2BGR)
+#     print('hello')
+#     key = cv2.waitKey(20)
+#     if key == 27: # exit on ESC
+#         break
 
 
 
