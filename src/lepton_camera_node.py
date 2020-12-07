@@ -129,9 +129,25 @@ class LeptonCamera:
         if type == 1:
             self.image_ir2 = cv2.cvtColor(self.image_ir, cv2.COLOR_RGB2HSV)
             self.image_v = self.image_ir[:,:,2]
-            msg = CvBridge().cv2_to_imgmsg(self.image_v, "mono8")
+            # msg = CvBridge().cv2_to_imgmsg(self.image_v, "mono8")
             # self.show_img(self.image_ir)
+            # self.output_pub_ir.publish(msg)
+            
+            data = cv2.cvtColor(self.image_ir, cv2.COLOR_BGR2GRAY)
+            
+            data = cv2.resize(data, (680,480))
+            # msg = CvBridge().cv2_to_imgmsg(data)
+            # self.output_pub_ir.publish(msg)
+            minVal, maxVal, minLoc, maxLoc = cv2.minMaxLoc(data)
+            print(minVal, maxVal, minLoc, maxLoc)
+            img = self.raw_to_8bit(data)
+            self.display_temperature(img, minVal, minLoc, (255, 0, 0))
+            self.display_temperature(img, maxVal, maxLoc, (0, 0, 255))
+            msg = CvBridge().cv2_to_imgmsg(img, 'rgb8')
             self.output_pub_ir.publish(msg)
+            
+            
+            
         if type == 3:
             self.image_depth2 = (self.image_depth/256).astype('uint8')
             msg = CvBridge().cv2_to_imgmsg(self.image_depth2, "mono8")
@@ -139,6 +155,24 @@ class LeptonCamera:
             
         self.nowTick = rospy.get_time()            
         self.pastTick = self.nowTick
+    
+    def ktof(self, val):
+        return (1.8 * self.ktoc(val) + 32.0)
+
+    def ktoc(self, val):
+        return (val - 27315) / 100.0
+
+    def raw_to_8bit(self, data):
+        cv2.normalize(data, data, 0, 65535, cv2.NORM_MINMAX)
+        np.right_shift(data, 8, data)
+        return cv2.cvtColor(np.uint8(data), cv2.COLOR_GRAY2RGB)
+    
+    def display_temperature(self, img, val_k, loc, color):
+        val = self.ktof(val_k)
+        cv2.putText(img,"{0:.1f} degF".format(val), loc, cv2.FONT_HERSHEY_SIMPLEX, 0.75, color, 2)
+        x, y = loc
+        cv2.line(img, (x - 2, y), (x + 2, y), color, 1)
+        cv2.line(img, (x, y - 2), (x, y + 2), color, 1)
 
 def main(args):
     rospy.init_node('lepton')
