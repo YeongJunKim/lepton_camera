@@ -10,7 +10,7 @@ from cv_bridge import CvBridge, CvBridgeError
 import geometry_msgs
 from cv_bridge.boost.cv_bridge_boost import getCvType
 
-
+import colour
 
 # class OpenCvCapture(object):
 #     """
@@ -54,8 +54,31 @@ from cv_bridge.boost.cv_bridge_boost import getCvType
 
 # if __name__ == '__main__':
 #     OpenCvCapture().show_video()
+# import cv2
+# cameraID = 0
+# vc = cv2.VideoCapture(cameraID)
+# video_capture = cv2.VideoCapture(0)
+# if not video_capture.isOpened():
+#     raise Exception("Could not open video device")
+# # Set properties. Each returns === True on success (i.e. correct resolution)
+# video_capture.set(cv2.CAP_PROP_FRAME_WIDTH, 160)
+# video_capture.set(cv2.CAP_PROP_FRAME_HEIGHT, 120)
+# # Read picture. ret === True on success
+# ret, frame = video_capture.read()
+# cv2.imshow("preview", frame)
 
+# if vc.isOpened(): # try to get the first frame
+#     rval, frame = vc.read()
+# else:
+#     rval = False
+# while rval:
+#     cv2.imshow("preview", frame)
+#     rval, frame = vc.read()
+#     key = cv2.waitKey(20)
+#     if key == 27: # exit on ESC
+#         break
 
+cv2.namedWindow("Image")
 class LeptonCamera:
     def __init__(self):
         self.rgb_topic = "/usb_cam/image_raw"
@@ -80,31 +103,38 @@ class LeptonCamera:
     def ir_callback(self, msg):
         # print("Received an image!")
         bridge = CvBridge()
-        self.image_ir = bridge.imgmsg_to_cv2(msg, "mono8")
+        self.image_ir = bridge.imgmsg_to_cv2(msg)
         self.main(1)
     def rgb_callbcak(self, msg):
         # print("Received an rgb image!")
         bridge = CvBridge()
         self.image_rgb = bridge.imgmsg_to_cv2(msg, "bgr8")
         self.main(2)
-    
     def depth_callback(self, msg):
         # print("Received an depth image!")
         bridge = CvBridge()
         self.image_depth = bridge.imgmsg_to_cv2(msg)
+        # print(self.image_depth.type)
         self.main(3)
     
+    def show_img(image, name="Image"):
+        # cv2.namedWindow(name, cv2.WINDOW_NORMAL)
+        cv2.imshow("Image", image)
+        cv2.waitKey(3)
         
     def main(self, type):
         self.nowTick = rospy.get_time()
         # if self.nowTick - self.pastTick > 0.05:
         print("run")
         if type == 1:
-            msg = CvBridge().cv2_to_imgmsg(self.image_ir)
+            self.image_ir2 = cv2.cvtColor(self.image_ir, cv2.COLOR_RGB2HSV)
+            self.image_v = self.image_ir[:,:,2]
+            msg = CvBridge().cv2_to_imgmsg(self.image_v, "mono8")
+            # self.show_img(self.image_ir)
             self.output_pub_ir.publish(msg)
-        
         if type == 3:
-            msg = CvBridge().cv2_to_imgmsg(self.image_depth)
+            self.image_depth2 = (self.image_depth/256).astype('uint8')
+            msg = CvBridge().cv2_to_imgmsg(self.image_depth2, "mono8")
             self.output_pub_depth.publish(msg)    
             
         self.nowTick = rospy.get_time()            
