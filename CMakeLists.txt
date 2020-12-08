@@ -164,6 +164,7 @@ include_directories(
 catkin_install_python(PROGRAMS
   # scripts/my_python_script
   src/lepton_camera_node.py
+  python/uvc-radiometry.py
   DESTINATION ${CATKIN_PACKAGE_BIN_DESTINATION}
 )
 
