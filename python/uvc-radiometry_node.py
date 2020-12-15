@@ -127,8 +127,8 @@ class LeptonCamera:
     msg = CvBridge().cv2_to_imgmsg(self.img, 'bgr8')
     self.output_minmax_pub.publish(msg)
 
-    cv2.imshow('Lepton Radiometry', self.img)
-    cv2.waitKey(1)
+    # cv2.imshow('Lepton Radiometry', self.img)
+    # cv2.waitKey(1)
 
   def ktof(self, val):
     return (1.8 * self.ktoc(val) + 32.0)
