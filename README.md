@@ -1,10 +1,21 @@
-# lepton_camera
-lepton_camera
-
-
-
-
-if error occurred make sure
+#### lepton_camera
+* Follow libuvc from groupgets/libuvc,
 ```
-apt-get install libusb-1.0-0-dev
+~$ git clone https://github.com/groupgets/libuvc
+~$ cd libuvc
+~$ mkdir build
+~$ cd build
+~$ cmake ..
+~$ make && sudo make install
+```
+* If error occurred make sure
+```
+~$ apt-get install libusb-1.0-0-dev
+```
+**Above installation process are utilized from [groupgets/purethermal1_uvc-capture](https://github.com/groupgets/purethermal1-uvc-capture)**
+* Run ros node
+```
+~$ sudo su
+~$ source /home/{$use}/catkin_ws/devel/setup.bash
+~$ rosrun lepton_camera uvc-radiometry_node.py
 ```
