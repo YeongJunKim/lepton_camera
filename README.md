@@ -16,6 +16,6 @@
 * Run ros node
 ```
 ~$ sudo su
-~$ source /home/{$use}/catkin_ws/devel/setup.bash
+~$ source /home/{$user}/catkin_ws/devel/setup.bash
 ~$ rosrun lepton_camera uvc-radiometry_node.py
 ```
